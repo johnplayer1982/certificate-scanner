@@ -27,6 +27,16 @@ jobs:
       - name: Install jq
         run: sudo apt-get install -y jq
 
+      - name: Debug List Key Vaults
+        run: az keyvault list --query "[].name" -o tsv
+
+      - name: Debug List Certificates in Each Vault
+        run: |
+          for vault in $(az keyvault list --query "[].name" -o tsv); do
+            echo "Vault: $vault"
+            az keyvault certificate list --vault-name "$vault" --query "[].{name:name, expires:attributes.expires}" -o json
+          done
+
       - name: Scan all Key Vault certificates
         run: |
           echo "vault,certificate,expires" > cert-expiry.csv

@@ -43,7 +43,7 @@ AZURE_TENANT_ID
 AZURE_SUBSCRIPTION_ID
 ```
 
-## Getting those values (A refresher)
+### Getting those values (A refresher)
 
 1. AZURE_CLIENT_ID
 
@@ -68,3 +68,49 @@ AZURE_SUBSCRIPTION_ID
     ```
     az ad sp list --display-name <app-name> --query "[0].appId" -o tsv
     ```
+
+## Azure Setup
+
+### Set up Azure App Registration with federated credentials
+
+1. Register an App in Azure AD
+Go to Azure Portal → Azure Active Directory → App registrations → New registration.  
+Name your app (e.g., "GitHub OIDC App").
+Set the supported account type (usually "Single tenant").
+Click "Register".
+
+2. Assign API Permissions (if needed)
+In your app registration, go to "API permissions".  
+Add permissions required for your workflow (e.g., Azure Key Vault access).
+
+3. Assign a Role to the App
+Go to your subscription/resource group/Key Vault.  
+Access "Access control (IAM)" → "Add role assignment".  
+Assign a role (e.g., "Key Vault Reader") to your app’s Service Principal.
+
+4. Add a Federated Credential for GitHub Actions
+In your app registration, go to "Certificates & secrets" → "Federated credentials" → "Add credential" → Select "GitHub Actions deploying Azure Resources".  
+Fill in:
+Issuer: https://token.actions.githubusercontent.com (pre-populated)
+Subject identifier:
+    - Oranisation (johnplayer1982)
+    - Repository (certificate-scanner)
+    - Entity type (branch)
+    - GitHub branch name (main or * for all)
+Name: (e.g., "GitHub Actions OID")
+Audience: api://AzureADTokenExchange (pre-populated)
+Save.
+
+5. Use the App Registration in GitHub Actions
+Set the AZURE_CLIENT_ID, AZURE_TENANT_ID, and AZURE_SUBSCRIPTION_ID as repository secrets in GitHub.  
+The workflow can now use OIDC to authenticate without secrets.
+
+# Troubleshooting
+
+## CSV only contains vault,certificate,expires titles
+
+Ensure your App Registration has at least the Reader role at the subscription level to list Key Vaults.  
+
+For listing certificates, it needs Key Vault Reader or Key Vault Certificates Officer on each Key Vault.
+
+
