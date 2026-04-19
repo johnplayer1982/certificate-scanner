@@ -110,7 +110,8 @@ The workflow can now use OIDC to authenticate without secrets.
 ## CSV only contains vault,certificate,expires titles
 
 Ensure your App Registration has at least the Reader role at the subscription level to list Key Vaults.  
+For listing certificates, the App Registration needs Get and List certificate permissions (<key_vault> > Access Policies):
 
-For listing certificates, it needs Key Vault Reader or Key Vault Certificates Officer on each Key Vault.
-
-
+| Application     | Email | Key Permissions | Secret Permissions | Certificate Permissions |
+|-----------------|-------|-----------------|--------------------|-------------------------|
+| GitHub OIDC App |       |                 |                    | Get, List               |
