@@ -1,0 +1,48 @@
+name: Key Vault Certificate Expiry Scan
+
+on:
+  schedule:
+    - cron: "0 6 * * *"   # Daily at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Scan all Key Vault certificates
+        run: |
+          echo "vault,certificate,expires" > cert-expiry.csv
+
+          # Get all Key Vaults
+          for vault in $(az keyvault list --query "[].name" -o tsv); do
+            certs=$(az keyvault certificate list \
+              --vault-name "$vault" \
+              --query "[].{name:name, expires:attributes.expires}" \
+              -o json)
+
+            echo "$certs" | jq -r --arg v "$vault" '.[] | "\($v),\(.name),\(.expires)"' >> cert-expiry.csv
+          done
+
+      - name: Upload CSV artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: keyvault-certificate-expiry
+          path: cert-expiry.csv
